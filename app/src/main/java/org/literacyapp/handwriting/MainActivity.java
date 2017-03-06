@@ -36,6 +36,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         ContentProvider.initializeDb(this);
+
+        Intent intent = new Intent(this, WriteLetterActivity.class);
+        startActivity(intent);
+
+        finish();
     }
 
     @Override
