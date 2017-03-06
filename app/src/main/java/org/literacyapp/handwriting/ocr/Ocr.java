@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Typeface;
 import android.inputmethodservice.InputMethodService;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.inputmethod.InputConnection;
@@ -28,7 +29,6 @@ public class Ocr extends SingleTouchEventView {
 
 	private static int DOWNSAMPLE_HEIGHT = 50;
 	private static int DOWNSAMPLE_WIDTH = 50;
-	private static final String TAG = "LOG";
 	private static final int MAX_SLICE_LENGTH = 70;
 	private Entry entry;
 	private CharData[] neuronMap;
@@ -36,12 +36,8 @@ public class Ocr extends SingleTouchEventView {
 	private Engine engine;
 	private LanguageProcessor langProc;
 	private LetterBuffer lBuffer;
-	private InputConnection inputConn;
-	
-	private TextView stackView;
-	private LinearLayout suggestionsViewGroup;
+
 	private InputMethodService imeService;
-	private TextView sliceView;
 	/**
 	 * The neural network.
 	 */
@@ -50,12 +46,6 @@ public class Ocr extends SingleTouchEventView {
 	
 	private int lettersToDelete=0;
 
-	public InputConnection getInputConn() {
-		return inputConn;
-	}
-	public void setInputConn(InputConnection inputConn) {
-		this.inputConn = inputConn;
-	}
 	public Engine getEngine() {
 		return engine;
 	}
@@ -83,12 +73,9 @@ public class Ocr extends SingleTouchEventView {
 		entry.setSampleData(sampleData);
 	}
 	
-	public void loadEngine(LanguageProcessor langProc, LetterBuffer lBuffer, TextView stackView, LinearLayout suggestionsViewGroup, TextView sliceView) {
+	public void loadEngine(LanguageProcessor langProc, LetterBuffer lBuffer) {
 		this.langProc = langProc;
 		this.lBuffer = lBuffer;
-		this.stackView = stackView;
-		this.suggestionsViewGroup = suggestionsViewGroup;
-		this.sliceView = sliceView;
 		Engine en = new Engine();
 		try {
 			en.restore(getContext().getAssets().open(langProc.getEngineName()));
@@ -116,8 +103,8 @@ public class Ocr extends SingleTouchEventView {
 	
 	private void cleanAllViews() {
 		lBuffer.emptyBuffer();
-		suggestionsViewGroup.removeAllViews();
-		stackView.setText("");
+//		suggestionsViewGroup.removeAllViews();
+//		stackView.setText("");
 		showSliceText();
 	}
 	
@@ -167,7 +154,9 @@ public class Ocr extends SingleTouchEventView {
 	}
 	
 	@Override
-	protected void onTouchUp() {	
+	protected void onTouchUp() {
+		Log.i(getClass().getName(), "onTouchUp");
+
 		if(super.isSmallPath()) {
 			if(imeService!=null) {
 				imeService.requestHideSelf(0);
@@ -178,93 +167,46 @@ public class Ocr extends SingleTouchEventView {
 		}
 		
 		CharData[] cData = this.recognizeAction(10);
-		CharSequence pre = inputConn.getTextBeforeCursor(1, 0);
-		String previous;
-		try {
-			previous = pre.toString();
-			if(pre.length()==0) {
-				previous = null;
-			}
-		} catch (Exception e) {
-			previous = null;
-		}
-		String[] result = lBuffer.put(previous, cData);
-		
-		inputConn.deleteSurroundingText(lettersToDelete, 0);
+		Log.i(getClass().getName(), "cData: " + cData);
 		
 		showCandidates();
-		/*if(result==null) {
-			return;
-		}*/
-		putText(previous, result);
-		lettersToDelete = cData[0].getSymbol().length();
-		inputConn.commitText(cData[0].getSymbol(), 1);
-		showSliceText();
-		//return true;
 	}
 
 	private void clearAction() {
 		this.entry.clear();
 		super.clear();
 	}
-	
+
 	public void dumbProcess(CharData c) {
-		String[] result;
-		CharSequence pre = inputConn.getTextBeforeCursor(1, 0);
-		String previous;
-		try {
-			previous = pre.toString();
-			if(pre.length()==0) {
-				previous = null;
-			}
-		} catch (Exception e) {
-			previous = null;
-		}
-		
-		if(!c.getSymbol().isEmpty()) {
-			result = lBuffer.put(previous, new CharData[]{c});
-			if(result!=null) {
-				putText(previous, result);
-				previous = "" + (char)result[result.length-1].codePointBefore(result[result.length-1].length());
-			}
-		}
-		result = lBuffer.emptyBuffer();
-		if(result!=null) {
-			inputConn.deleteSurroundingText(lettersToDelete, 0);
-			lettersToDelete = 0;
-			putText(previous, result);
-		}
-		
+		Log.i(getClass().getName(), "dumbProcess");
+
 		showSliceText();
 		showCandidates();
 	}
 	
 	private void showCandidates() {
-		stackView.setText(langProc.getStack());
-		suggestionsViewGroup.removeAllViews();
+		Log.i(getClass().getName(), "showCandidates");
+
+		Log.i(getClass().getName(), "langProc: " + langProc);
+		if (langProc != null) {
+			Log.i(getClass().getName(), "langProc.getStack(): " + langProc.getStack());
+		}
+
+		Log.i(getClass().getName(), "lBuffer: " + lBuffer);
+		Log.i(getClass().getName(), "lBuffer.isEmpty(): " + lBuffer.isEmpty());
+
 		if(!lBuffer.isEmpty()) {
 			/*List<CharData>*/CharData[] suggestions = lBuffer.getSuggestions();
+			Log.i(getClass().getName(), "suggestions: " + suggestions);
 			if(suggestions!=null /*&& !suggestions.isEmpty()*/) {
 				Context ctx = this.getContext();
-				
-				CharSequence pre = inputConn.getTextBeforeCursor(1, 0);
-				String preStr;
-				try {
-					preStr = pre.toString();
-					if(pre.length()==0) {
-						preStr = null;
-					}
-				} catch (Exception e) {
-					preStr = null;
-				}
-				final String previous = preStr;
 				
 				Typeface font = null;
 				if(langProc.getFontName()!=null) {
 					font = Typeface.createFromAsset(this.getContext().getAssets(), langProc.getFontName());
-					stackView.setTypeface(font);
+//					stackView.setTypeface(font);
 				} else {
-					stackView.setTypeface(Typeface.SANS_SERIF);
+//					stackView.setTypeface(Typeface.SANS_SERIF);
 				}
 				
 				for(final CharData suggestion : suggestions) {
@@ -287,65 +229,27 @@ public class Ocr extends SingleTouchEventView {
 		    			public void onClick(View v) {
 		    				String[] result = lBuffer.replace(suggestion);
 		    				
-		    				/*int pos = inputBox.getSelectionStart();
-							String previous;
-							try {
-								previous = "" + (char)inputBox.getText().toString().codePointBefore(pos);
-							} catch (Exception e) {
-								previous = null;
-							}
-		    				
-		    				putText(pos, previous, result);*/
-		    				
-		    				inputConn.deleteSurroundingText(lettersToDelete, 0);
-		    				lettersToDelete = 0;
-		    				putText(previous, result);
-		    				
 		    				showSliceText();
 		    				showCandidates();
 		    			}
 		    		});
-					suggestionsViewGroup.addView(suggestView);
+//					suggestionsViewGroup.addView(suggestView);
 				}
 			}
 		}
 		//suggestionsViewGroup.invalidate();
-		((HorizontalScrollView) suggestionsViewGroup.getParent()).scrollTo(0, 0);
+//		((HorizontalScrollView) suggestionsViewGroup.getParent()).scrollTo(0, 0);
 	}
 	
 	private void putText(String previous, String[] result) {
+		Log.i(getClass().getName(), "putText");
+
 		if(result==null) {
 			return;
 		}
-		
-		String finStr="";
-		for(int i=0; i< result.length; i++) {
-			finStr =finStr + result[i];
-		}
-		if(result.length>1 && previous!=null) {
-			//inputBox.getText().replace(pos-1, pos, finStr);
-			inputConn.deleteSurroundingText(1, 0);
-			inputConn.commitText(finStr, 1);
-		} else {
-			//inputBox.getText().insert(pos, finStr);
-			inputConn.commitText(finStr, 1);
-		}
-		
 	}
 	
 	public void showSliceText() {
-		CharSequence str = inputConn.getTextBeforeCursor(MAX_SLICE_LENGTH, 0);
-		if(str==null) str = "";
-		else {
-			String s = str.toString();
-			s = s.substring(s.lastIndexOf("\n")+1);
-			str = s;
-		}
-		sliceView.setText(str);
-		if(langProc.getFontName()==null) {
-			sliceView.setTypeface(Typeface.SANS_SERIF);
-		} else {
-			sliceView.setTypeface(Typeface.createFromAsset(this.getContext().getAssets(), langProc.getFontName()));
-		}
+		Log.i(getClass().getName(), "showSliceText");
 	}
 }

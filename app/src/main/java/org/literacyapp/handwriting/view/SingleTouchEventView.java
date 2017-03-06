@@ -42,8 +42,8 @@ public class SingleTouchEventView extends View {
 		super(context, attrs);
 
 		paint.setAntiAlias(true);
-		paint.setStrokeWidth(6f);
-		paint.setColor(Color.WHITE);
+		paint.setStrokeWidth(30);
+		paint.setColor(Color.BLACK);
 		paint.setStyle(Paint.Style.STROKE);
 		paint.setStrokeJoin(Paint.Join.ROUND);
 		
