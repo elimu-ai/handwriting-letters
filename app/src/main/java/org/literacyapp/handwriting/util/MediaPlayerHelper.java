@@ -23,6 +23,8 @@ import java.util.List;
  * See https://developer.android.com/reference/android/media/MediaPlayer.html#create%28android.content.Context,%20int%29
  */
 public class MediaPlayerHelper {
+    public static final long DEFAULT_PLAYER_DELAY = 1000;
+
     private static final String INSTRUCTION_LETTER_1 = "can_you_draw_the_letter";
     private static final String INSTRUCTION_LETTER_2 = "draw_the_letter";
     private static final String INSTRUCTION_LETTER_3 = "now_try_to_draw_the_letter";

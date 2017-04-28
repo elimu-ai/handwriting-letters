@@ -11,6 +11,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import org.literacyapp.contentprovider.ContentProvider;
+import org.literacyapp.contentprovider.model.content.Letter;
+import org.literacyapp.contentprovider.model.content.Number;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
