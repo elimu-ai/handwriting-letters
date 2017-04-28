@@ -3,6 +3,7 @@ package org.literacyapp.handwriting.ocr;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.inputmethodservice.InputMethodService;
+import android.media.MediaPlayer;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -20,6 +21,7 @@ import org.literacyapp.handwriting.entity.Engine;
 import org.literacyapp.handwriting.entity.LanguageProcessor;
 import org.literacyapp.handwriting.entity.LetterBuffer;
 import org.literacyapp.handwriting.entity.MultiSOM;
+import org.literacyapp.handwriting.util.MediaPlayerHelper;
 import org.literacyapp.handwriting.view.SingleTouchEventView;
 
 import java.util.ArrayList;
@@ -170,6 +172,8 @@ public class Ocr extends SingleTouchEventView {
 		Log.i(getClass().getName(), "cData: " + cData);
 		
 		showCandidates();
+
+		MediaPlayerHelper.playLessonCompleted(getContext());
 	}
 
 	private void clearAction() {
