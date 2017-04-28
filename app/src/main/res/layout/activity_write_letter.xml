@@ -20,7 +20,8 @@
             android:gravity="center"
             android:textColor="@color/colorPrimaryDark"
             android:textSize="280sp"
-            android:text="a" />
+            android:text="a"
+            android:id="@+id/textView"/>
 
         <android.support.v7.widget.CardView
             android:layout_width="0dp"

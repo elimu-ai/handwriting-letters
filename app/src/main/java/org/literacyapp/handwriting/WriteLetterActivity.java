@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.TextView;
 
 import org.literacyapp.contentprovider.ContentProvider;
 import org.literacyapp.contentprovider.dao.AudioDao;
@@ -23,6 +24,7 @@ import org.literacyapp.handwriting.util.MediaPlayerHelper;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.util.List;
 
 public class WriteLetterActivity extends AppCompatActivity {
 
@@ -33,7 +35,6 @@ public class WriteLetterActivity extends AppCompatActivity {
     private LetterBuffer lBuffer;
 
     private AudioDao audioDao;
-    private LetterDao letterDao;
     private Letter letter;
 
     @Override
@@ -46,11 +47,12 @@ public class WriteLetterActivity extends AppCompatActivity {
         ocr = (Ocr) findViewById(R.id.writePad);
 
         DaoSession daoSession = ContentProvider.getDaoSession();
-        letterDao = daoSession.getLetterDao();
         audioDao = daoSession.getAudioDao();
-        letter = letterDao.queryBuilder()
-                .where(LetterDao.Properties.Text.eq("a"))
-                .unique();
+
+        List<Letter> unlockedLetters = ContentProvider.getUnlockedLetters();
+        letter = unlockedLetters.get((int)(Math.random() * unlockedLetters.size()));
+        TextView textView = (TextView) findViewById(R.id.textView);
+        textView.setText(letter.getText());
         Log.i(getClass().getName(), "letter: " + letter);
     }
 
