@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
         ContentProvider.initializeDb(this);
 
-        Intent intent = new Intent(this, WriteLetterActivity.class);
+        Intent intent = new Intent(this, WriteNumberActivity.class);
         startActivity(intent);
 
         finish();

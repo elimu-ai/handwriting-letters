@@ -3,6 +3,7 @@
     package="org.literacyapp.handwriting">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:name="HandwritingApplication"
@@ -21,6 +22,8 @@
 
         <activity
             android:name=".WriteLetterActivity" />
+        <activity
+            android:name=".WriteNumberActivity" />
         <activity
             android:name=".FinalActivity" />
     </application>
