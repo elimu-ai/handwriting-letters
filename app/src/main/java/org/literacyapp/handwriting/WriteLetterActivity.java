@@ -1,50 +1,54 @@
 package org.literacyapp.handwriting;
 
-import android.content.res.Resources;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.TextView;
 
 import org.literacyapp.contentprovider.ContentProvider;
 import org.literacyapp.contentprovider.dao.AudioDao;
 import org.literacyapp.contentprovider.dao.DaoSession;
-import org.literacyapp.contentprovider.dao.LetterDao;
 import org.literacyapp.contentprovider.model.content.Letter;
-import org.literacyapp.contentprovider.model.content.multimedia.Audio;
-import org.literacyapp.contentprovider.util.MultimediaHelper;
-import org.literacyapp.handwriting.entity.Engine;
-import org.literacyapp.handwriting.entity.LanguageProcessor;
-import org.literacyapp.handwriting.entity.LetterBuffer;
-import org.literacyapp.handwriting.lang.EnglishProcessor;
-import org.literacyapp.handwriting.ocr.Ocr;
+import org.literacyapp.handwriting.ocr.Classifier;
+import org.literacyapp.handwriting.ocr.TensorFlowImageClassifier;
 import org.literacyapp.handwriting.util.MediaPlayerHelper;
+import org.literacyapp.handwriting.view.DrawModel;
+import org.literacyapp.handwriting.view.DrawView;
+import org.literacyapp.handwriting.view.DrawViewOnTouchListener;
 
-import java.io.File;
-import java.lang.reflect.Constructor;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
-public class WriteLetterActivity extends AppCompatActivity {
-
-    private Ocr ocr;
-
-    private LanguageProcessor langProc;
-
-    private LetterBuffer lBuffer;
+public class WriteLetterActivity extends AppCompatActivity implements View.OnTouchListener {
 
     private AudioDao audioDao;
     private Letter letter;
+
+    private static final int PIXEL_WIDTH = 28;
+
+    private DrawModel mModel;
+    private DrawView mDrawView;
+
+    private static final int INPUT_SIZE = 28;
+    private static final String INPUT_NAME = "input";
+    private static final String OUTPUT_NAME = "output";
+
+    private static final String MODEL_FILE = "file:///android_asset/letters.pb";
+    private static final String LABEL_FILE =
+            "file:///android_asset/letters.txt";
+
+    private Classifier classifier;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.i(getClass().getName(), "onCreate");
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_write_letter);
-
-        ocr = (Ocr) findViewById(R.id.writePad);
+        setContentView(R.layout.activity_write);
 
         DaoSession daoSession = ContentProvider.getDaoSession();
         audioDao = daoSession.getAudioDao();
@@ -54,26 +58,42 @@ public class WriteLetterActivity extends AppCompatActivity {
         TextView textView = (TextView) findViewById(R.id.textView);
         textView.setText(letter.getText());
         Log.i(getClass().getName(), "letter: " + letter);
+        // Set on listener to restart the drawing with a blank screen
+        textView.setOnTouchListener(this);
+
+        initTensorFlowAndLoadModel();
+
+        mModel = new DrawModel(PIXEL_WIDTH, PIXEL_WIDTH);
+
+        mDrawView = (DrawView) findViewById(R.id.view_draw);
+        mDrawView.setModel(mModel);
+        DrawViewOnTouchListener listener = new DrawViewOnTouchListener(mDrawView, mModel, classifier, letter.getText(), getApplicationContext());
+        mDrawView.setOnTouchListener(listener);
     }
 
-    @Override
-    protected void onStart() {
-        Log.i(getClass().getName(), "onStart");
-        super.onStart();
+    private void initTensorFlowAndLoadModel() {
+        Log.i(getClass().getName(), "initTensorFlowAndLoadModel");
 
         try {
-            loadProcessor(EnglishProcessor.class.getName());
-        } catch (Exception e) {
-            Log.e(getClass().getName(), null, e);
+            classifier = TensorFlowImageClassifier.create(
+                    getAssets(),
+                    MODEL_FILE,
+                    LABEL_FILE,
+                    INPUT_SIZE,
+                    INPUT_NAME,
+                    OUTPUT_NAME);
+            Log.d(getClass().getName(), "Load Success");
+        } catch (final Exception e) {
+            throw new RuntimeException("Error initializing TensorFlow!", e);
         }
-
-        setDelay(500);
     }
 
     @Override
     protected void onResume() {
         Log.i(getClass().getName(), "onResume");
         super.onResume();
+
+        mDrawView.onResume();
 
         MediaPlayer mediaPlayer = MediaPlayerHelper.playInstructionSound(getApplicationContext());
         if (mediaPlayer != null){
@@ -86,20 +106,17 @@ public class WriteLetterActivity extends AppCompatActivity {
         }
     }
 
-    private void loadProcessor(String classname) throws Exception {
-        Log.i(getClass().getName(), "loadProcessor");
-
-        Class<LanguageProcessor> c = (Class<LanguageProcessor>) Class.forName(classname);
-        Constructor<LanguageProcessor> ct = c.getConstructor(Engine.class);
-
-        langProc = ct.newInstance(ocr.getEngine());
-        lBuffer = new LetterBuffer(langProc);
-        ocr.loadEngine(langProc, lBuffer);
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mDrawView.onPause();
     }
 
-    private void setDelay(long delay) {
-        Log.i(getClass().getName(), "setDelay");
-
-        ocr.setDelay(delay);
+    @Override
+    public boolean onTouch(View view, MotionEvent motionEvent) {
+        mModel.clear();
+        mDrawView.reset();
+        mDrawView.invalidate();
+        return true;
     }
 }

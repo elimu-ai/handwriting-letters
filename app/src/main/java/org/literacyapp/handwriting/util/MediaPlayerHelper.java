@@ -8,6 +8,7 @@ import android.util.Log;
 
 import org.literacyapp.contentprovider.dao.AudioDao;
 import org.literacyapp.contentprovider.model.content.Letter;
+import org.literacyapp.contentprovider.model.content.Number;
 import org.literacyapp.contentprovider.model.content.multimedia.Audio;
 import org.literacyapp.contentprovider.util.MultimediaHelper;
 
@@ -69,14 +70,34 @@ public class MediaPlayerHelper {
         return playRandomResource(context, instructionList);
     }
 
-    public static void playLetterSound(Context context, AudioDao audioDao, Letter letter) {
+    public static void playLetterSound(Context context, AudioDao audioDao, Letter letter){
         Log.i(context.getClass().getName(), "playLetterSound");
 
+        playSound(context, audioDao, letter.getText(), Letter.class);
+    }
+
+    public static void playNumberSound(Context context, AudioDao audioDao, Number number){
+        Log.i(context.getClass().getName(), "playNumberSound");
+
+        playSound(context, audioDao, number.getValue().toString(), Letter.class);
+    }
+
+    private static void playSound(Context context, AudioDao audioDao, String text, Class type) {
+        Log.i(context.getClass().getName(), "playSound");
+
         // Look up corresponding Audio
-        Log.d(context.getClass().getName(), "Looking up \"letter_sound_" + letter.getText() + "\"");
-        final Audio audio = audioDao.queryBuilder()
-                .where(AudioDao.Properties.Transcription.eq("letter_sound_" + letter.getText()))
-                .unique();
+        final Audio audio;
+        if (type == Letter.class){
+            Log.d(context.getClass().getName(), "Looking up \"letter_sound_" + text + "\"");
+            audio = audioDao.queryBuilder()
+                    .where(AudioDao.Properties.Transcription.eq("letter_sound_" + text))
+                    .unique();
+        } else {
+            Log.d(context.getClass().getName(), "Looking up \"digit_" + text + "\"");
+            audio = audioDao.queryBuilder()
+                    .where(AudioDao.Properties.Transcription.eq("digit_" + text))
+                    .unique();
+        }
         Log.i(context.getClass().getName(), "audio: " + audio);
         if (audio != null) {
             // Play audio
@@ -94,18 +115,23 @@ public class MediaPlayerHelper {
                 mediaPlayer.start();
             } else {
                 // Audio not found. Fall-back to application resource.
-                playLetterSoundFromAppResources(context, letter);
+                playSoundFromAppResources(context, text, type);
             }
         } else {
             // Audio not found. Fall-back to application resource.
-            playLetterSoundFromAppResources(context, letter);
+            playSoundFromAppResources(context, text, type);
         }
     }
 
-    private static void playLetterSoundFromAppResources(Context context, Letter letter){
-        Log.i(context.getClass().getName(), "playLetterSoundFromAppResources");
+    private static void playSoundFromAppResources(Context context, String text, Class type){
+        Log.i(context.getClass().getName(), "playSoundFromAppResources");
 
-        String audioFileName = "letter_sound_" + letter.getText();
+        String audioFileName;
+        if (type == Letter.class){
+            audioFileName = "letter_sound_" + text;
+        } else {
+            audioFileName = "digit_" + text;
+        }
         int resourceId = context.getResources().getIdentifier(audioFileName, "raw", context.getPackageName());
         try {
             if (resourceId != 0) {
