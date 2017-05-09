@@ -35,6 +35,7 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+    testCompile 'junit:junit:4.12'
     compile 'org.literacyapp:literacyapp-model:1.1.33'
     compile 'org.literacyapp:contentprovider:1.0.5'
     compile 'org.tensorflow:libandroid_tensorflow_inference_java:1.0.1'
