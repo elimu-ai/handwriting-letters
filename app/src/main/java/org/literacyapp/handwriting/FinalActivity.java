@@ -45,7 +45,7 @@ public class FinalActivity extends AppCompatActivity {
                             HandwritingApplication handwritingApplication = (HandwritingApplication) getApplicationContext();
                             handwritingApplication.setCompletionCounter(handwritingApplication.getCompletionCounter() + 1);
                             if (handwritingApplication.getCompletionCounter() < 5){
-                                Intent intent = new Intent(getApplicationContext(), WriteNumberActivity.class);
+                                Intent intent = new Intent(getApplicationContext(), WriteLetterActivity.class);
                                 startActivity(intent);
                             } else {
                                 finishAffinity();

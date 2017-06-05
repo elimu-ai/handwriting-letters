@@ -12,16 +12,13 @@ import org.literacyapp.contentprovider.ContentProvider;
 import org.literacyapp.contentprovider.dao.AudioDao;
 import org.literacyapp.contentprovider.dao.DaoSession;
 import org.literacyapp.contentprovider.model.content.Letter;
-import org.literacyapp.handwriting.ocr.Classifier;
-import org.literacyapp.handwriting.ocr.TensorFlowImageClassifier;
 import org.literacyapp.handwriting.util.MediaPlayerHelper;
 import org.literacyapp.handwriting.view.DrawModel;
 import org.literacyapp.handwriting.view.DrawView;
 import org.literacyapp.handwriting.view.DrawViewOnTouchListener;
+import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 public class WriteLetterActivity extends AppCompatActivity implements View.OnTouchListener {
 
@@ -34,14 +31,12 @@ public class WriteLetterActivity extends AppCompatActivity implements View.OnTou
     private DrawView mDrawView;
 
     private static final int INPUT_SIZE = 28;
-    private static final String INPUT_NAME = "input";
-    private static final String OUTPUT_NAME = "output";
+    private static final String INPUT_NAME = "Placeholder";
+    private static final String OUTPUT_NAME = "fco/softmax/Reshape_1";
 
-    private static final String MODEL_FILE = "file:///android_asset/letters.pb";
-    private static final String LABEL_FILE =
-            "file:///android_asset/letters.txt";
+    private static final String MODEL_FILE = "file:///android_asset/slim_letters.pb";
 
-    private Classifier classifier;
+    private TensorFlowInferenceInterface inferenceInterface;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +62,7 @@ public class WriteLetterActivity extends AppCompatActivity implements View.OnTou
 
         mDrawView = (DrawView) findViewById(R.id.view_draw);
         mDrawView.setModel(mModel);
-        DrawViewOnTouchListener listener = new DrawViewOnTouchListener(mDrawView, mModel, classifier, letter.getText(), getApplicationContext());
+        DrawViewOnTouchListener listener = new DrawViewOnTouchListener(mDrawView, mModel, inferenceInterface, letter.getText(), getApplicationContext());
         mDrawView.setOnTouchListener(listener);
     }
 
@@ -75,13 +70,7 @@ public class WriteLetterActivity extends AppCompatActivity implements View.OnTou
         Log.i(getClass().getName(), "initTensorFlowAndLoadModel");
 
         try {
-            classifier = TensorFlowImageClassifier.create(
-                    getAssets(),
-                    MODEL_FILE,
-                    LABEL_FILE,
-                    INPUT_SIZE,
-                    INPUT_NAME,
-                    OUTPUT_NAME);
+            inferenceInterface = new TensorFlowInferenceInterface(getAssets(), MODEL_FILE);
             Log.d(getClass().getName(), "Load Success");
         } catch (final Exception e) {
             throw new RuntimeException("Error initializing TensorFlow!", e);

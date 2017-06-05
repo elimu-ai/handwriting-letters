@@ -9,8 +9,8 @@ import android.view.View;
 import android.widget.Toast;
 
 import org.literacyapp.handwriting.FinalActivity;
-import org.literacyapp.handwriting.ocr.Classifier;
-import org.literacyapp.handwriting.ocr.TensorFlowImageClassifier;
+import org.literacyapp.handwriting.util.MediaPlayerHelper;
+import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 import java.util.List;
 
@@ -21,6 +21,7 @@ import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
  */
 
 public class DrawViewOnTouchListener implements View.OnTouchListener {
+    private int failedCounter = 0;
     private PointF mTmpPoint = new PointF();
 
     private float mLastX;
@@ -29,16 +30,27 @@ public class DrawViewOnTouchListener implements View.OnTouchListener {
     private DrawView mDrawView;
     private DrawModel mModel;
 
-    private Classifier classifier;
+    private TensorFlowInferenceInterface inferenceInterface;
 
     private String characterToWrite;
 
     private Context context;
 
-    public DrawViewOnTouchListener(DrawView mDrawView, DrawModel mModel, Classifier classifier, String characterToWrite, Context context) {
+    private static final int INPUT_SIZE = 28;
+    private static final String INPUT_NAME = "Placeholder";
+    private static final String OUTPUT_NAME = "fco/BiasAdd";
+    // 1 channel because it's a grayscale image
+    private static final int CHANNELS = 1;
+    private static final boolean LOG_STATS = false;
+    private static final int OUTPUT_SIZE = 52;
+    private static final float THRESHOLD = 0.02f;
+
+    private static final int ASCII_LOWER_CASE_START = 97;
+
+    public DrawViewOnTouchListener(DrawView mDrawView, DrawModel mModel, TensorFlowInferenceInterface inferenceInterface, String characterToWrite, Context context) {
         this.mDrawView = mDrawView;
         this.mModel = mModel;
-        this.classifier = classifier;
+        this.inferenceInterface = inferenceInterface;
         this.characterToWrite = characterToWrite;
         this.context = context;
     }
@@ -89,19 +101,38 @@ public class DrawViewOnTouchListener implements View.OnTouchListener {
         mModel.endLine();
         float pixels[] = mDrawView.getPixelData();
 
-        final List<Classifier.Recognition> results = classifier.recognizeImage(pixels);
+        inferenceInterface.feed(INPUT_NAME, pixels, 1, INPUT_SIZE, INPUT_SIZE, CHANNELS);
+        inferenceInterface.run(new String[]{OUTPUT_NAME}, LOG_STATS);
+        float[] outputs = new float[OUTPUT_SIZE];
+        inferenceInterface.fetch(OUTPUT_NAME, outputs);
 
-        if (results.size() > 0) {
-            String toast = "";
-            for (int i=0; i < results.size(); i++){
-                toast = toast + results.get(i).getTitle() + " " + results.get(i).getConfidence() + "\n";
+        if (outputs.length > 0) {
+            int recognizedCharacter = -1;
+            float maxConfidentiality = 0.0f;
+            for (int i=0; i < outputs.length; i++){
+                if (outputs[i] >= THRESHOLD){
+                    if (outputs[i] > maxConfidentiality){
+                        recognizedCharacter = ASCII_LOWER_CASE_START + i;
+                        maxConfidentiality = outputs[i];
+                    }
+                }
             }
-            Toast.makeText(context, toast, Toast.LENGTH_SHORT).show();
-            /*if (results.get(0).getTitle().equals(characterToWrite)){
+            int characterToWriteASCII = (int)characterToWrite.charAt(0);
+            Log.i(getClass().getName(), "characterToWrite: " + characterToWrite + ", recognized character: " + Character.toString ((char) recognizedCharacter));
+            if (characterToWriteASCII == recognizedCharacter){
                 Intent intent = new Intent(context, FinalActivity.class);
                 intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(intent);
-            }*/
+            } else {
+                failedCounter++;
+                if (failedCounter > 2){
+                    mModel.clear();
+                    mDrawView.reset();
+                    mDrawView.invalidate();
+                    MediaPlayerHelper.playLessonFailed(context);
+                    failedCounter = 0;
+                }
+            }
         }
     }
 }

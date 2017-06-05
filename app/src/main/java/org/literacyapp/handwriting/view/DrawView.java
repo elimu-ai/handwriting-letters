@@ -18,7 +18,6 @@ package org.literacyapp.handwriting.view;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -27,8 +26,6 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
-
-import org.literacyapp.handwriting.util.ImageUtils;
 
 /**
  * Created by amitshekhar on 16/03/17.
@@ -178,8 +175,6 @@ public class DrawView extends View {
             int b = pix & 0xff;
             retPixels[i] = 0xff - b;
         }
-
-        ImageUtils.saveBitmap(mOffscreenBitmap);
 
         return retPixels;
     }

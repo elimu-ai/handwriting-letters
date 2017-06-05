@@ -38,6 +38,8 @@ public class MediaPlayerHelper {
     private static final String LESSON_COMPLETED_5 = "nice";
     private static final String LESSON_COMPLETED_6 = "well_done";
 
+    private static final String LESSON_FAILED_1 = "try_again";
+
     public static MediaPlayer play(Context context, int resId) {
         Log.i(MediaPlayerHelper.class.getName(), "play");
 
@@ -74,12 +76,6 @@ public class MediaPlayerHelper {
         Log.i(context.getClass().getName(), "playLetterSound");
 
         playSound(context, audioDao, letter.getText(), Letter.class);
-    }
-
-    public static void playNumberSound(Context context, AudioDao audioDao, Number number){
-        Log.i(context.getClass().getName(), "playNumberSound");
-
-        playSound(context, audioDao, number.getValue().toString(), Letter.class);
     }
 
     private static void playSound(Context context, AudioDao audioDao, String text, Class type) {
@@ -154,6 +150,15 @@ public class MediaPlayerHelper {
         lessonCompletedList.add(LESSON_COMPLETED_6);
 
         return playRandomResource(context, lessonCompletedList);
+    }
+
+    public static MediaPlayer playLessonFailed(Context context){
+        Log.i(context.getClass().getName(), "playLessonFailed");
+
+        List<String> lessonFailedList = new ArrayList<>();
+        lessonFailedList.add(LESSON_FAILED_1);
+
+        return playRandomResource(context, lessonFailedList);
     }
 
     private static MediaPlayer playRandomResource(Context context, List<String> list){
