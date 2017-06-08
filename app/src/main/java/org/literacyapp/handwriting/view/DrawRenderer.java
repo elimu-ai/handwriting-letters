@@ -30,12 +30,13 @@ public class DrawRenderer {
      */
     public static void renderModel(Canvas canvas, DrawModel model, Paint paint,
                                    int startLineIndex) {
-        paint.setAntiAlias(true);
+        paint.setColor(Color.BLACK);
+        paint.setStyle(Paint.Style.STROKE);
 
         int lineSize = model.getLineSize();
         for (int i = startLineIndex; i < lineSize; ++i) {
             DrawModel.Line line = model.getLine(i);
-            paint.setColor(Color.BLACK);
+
             int elemSize = line.getElemSize();
             if (elemSize < 1) {
                 continue;

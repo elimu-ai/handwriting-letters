@@ -25,7 +25,7 @@ public class WriteLetterActivity extends AppCompatActivity implements View.OnTou
     private AudioDao audioDao;
     private Letter letter;
 
-    private static final int PIXEL_WIDTH = 28;
+    private static final int PIXEL_WIDTH = 280;
 
     private DrawModel mModel;
     private DrawView mDrawView;
