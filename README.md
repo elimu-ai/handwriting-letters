@@ -1,8 +1,8 @@
-# Handwriting: Letters
+# Handwriting: Letters ✍🏽
 
 Android application for teaching and assessing handwriting
 
-![screenshot_20170607-002007](https://user-images.githubusercontent.com/15718174/26852573-ff54d246-4b0e-11e7-8e09-f7a22fdc1366.png)
+<img width=480 src="https://user-images.githubusercontent.com/15718174/26852573-ff54d246-4b0e-11e7-8e09-f7a22fdc1366.png" />
 
 See demo at https://www.youtube.com/watch?v=6gg9SLNMwhU
 
