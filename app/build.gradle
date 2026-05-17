@@ -1,4 +1,6 @@
-apply plugin: 'com.android.application'
+plugins {
+    alias(libs.plugins.android.application)
+}
 
 android {
     compileSdk 35
@@ -40,16 +42,16 @@ repositories {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    androidTestImplementation('androidx.test.espresso:espresso-core:3.6.1', {
+    androidTestImplementation(libs.androidx.test.espresso.core) {
         exclude group: 'com.android.support', module: 'support-annotations'
-    })
+    }
 
-    implementation 'ai.elimu:content-provider:1.4.38'
-    implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'androidx.cardview:cardview:1.0.0'
-    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'org.encog:encog-core:3.1.0'
-    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
-    androidTestImplementation 'androidx.test:runner:1.6.2'
-    testImplementation 'junit:junit:4.12'
+    implementation libs.elimu.content.provider
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.cardview
+    implementation libs.androidx.legacy.support.v4
+    implementation libs.encog.core
+    androidTestImplementation libs.androidx.test.ext.junit
+    androidTestImplementation libs.androidx.test.runner
+    testImplementation libs.junit
 }
