@@ -1,19 +1,13 @@
 package org.literacyapp.handwriting;
 
-import android.content.res.Resources;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 
-import org.literacyapp.contentprovider.ContentProvider;
-import org.literacyapp.contentprovider.dao.AudioDao;
-import org.literacyapp.contentprovider.dao.DaoSession;
-import org.literacyapp.contentprovider.dao.LetterDao;
-import org.literacyapp.contentprovider.model.content.Letter;
-import org.literacyapp.contentprovider.model.content.multimedia.Audio;
-import org.literacyapp.contentprovider.util.MultimediaHelper;
+import ai.elimu.content_provider.utils.ContentProviderUtil;
+import ai.elimu.model.v2.gson.content.LetterGson;
+
 import org.literacyapp.handwriting.entity.Engine;
 import org.literacyapp.handwriting.entity.LanguageProcessor;
 import org.literacyapp.handwriting.entity.LetterBuffer;
@@ -21,10 +15,12 @@ import org.literacyapp.handwriting.lang.EnglishProcessor;
 import org.literacyapp.handwriting.ocr.Ocr;
 import org.literacyapp.handwriting.util.MediaPlayerHelper;
 
-import java.io.File;
 import java.lang.reflect.Constructor;
+import java.util.List;
 
 public class WriteLetterActivity extends AppCompatActivity {
+
+    private static final String TAG = "WriteLetterActivity";
 
     private Ocr ocr;
 
@@ -32,37 +28,37 @@ public class WriteLetterActivity extends AppCompatActivity {
 
     private LetterBuffer lBuffer;
 
-    private AudioDao audioDao;
-    private LetterDao letterDao;
-    private Letter letter;
+    private LetterGson letter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.i(getClass().getName(), "onCreate");
+        Log.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_write_letter);
 
         ocr = (Ocr) findViewById(R.id.writePad);
 
-        DaoSession daoSession = ContentProvider.getDaoSession();
-        letterDao = daoSession.getLetterDao();
-        audioDao = daoSession.getAudioDao();
-        letter = letterDao.queryBuilder()
-                .where(LetterDao.Properties.Text.eq("a"))
-                .unique();
-        Log.i(getClass().getName(), "letter: " + letter);
+        List<LetterGson> letters = ContentProviderUtil.INSTANCE.getAllLetterGsons(
+                this, BuildConfig.CONTENT_PROVIDER_APPLICATION_ID);
+        for (LetterGson l : letters) {
+            if ("a".equals(l.getText())) {
+                letter = l;
+                break;
+            }
+        }
+        Log.d(TAG, "letter: " + letter);
     }
 
     @Override
     protected void onStart() {
-        Log.i(getClass().getName(), "onStart");
+        Log.d(TAG, "onStart");
         super.onStart();
 
         try {
             loadProcessor(EnglishProcessor.class.getName());
         } catch (Exception e) {
-            Log.e(getClass().getName(), null, e);
+            Log.e(TAG, "loadProcessor failed", e);
         }
 
         setDelay(500);
@@ -70,22 +66,22 @@ public class WriteLetterActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
-        Log.i(getClass().getName(), "onResume");
+        Log.d(TAG, "onResume");
         super.onResume();
 
         MediaPlayer mediaPlayer = MediaPlayerHelper.playInstructionSound(getApplicationContext());
-        if (mediaPlayer != null){
+        if (mediaPlayer != null) {
             mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                 @Override
                 public void onCompletion(MediaPlayer mediaPlayer) {
-                    MediaPlayerHelper.playLetterSound(getApplicationContext(), audioDao, letter);
+                    MediaPlayerHelper.playLetterSound(getApplicationContext(), letter);
                 }
             });
         }
     }
 
     private void loadProcessor(String classname) throws Exception {
-        Log.i(getClass().getName(), "loadProcessor");
+        Log.d(TAG, "loadProcessor: " + classname);
 
         Class<LanguageProcessor> c = (Class<LanguageProcessor>) Class.forName(classname);
         Constructor<LanguageProcessor> ct = c.getConstructor(Engine.class);
@@ -96,7 +92,7 @@ public class WriteLetterActivity extends AppCompatActivity {
     }
 
     private void setDelay(long delay) {
-        Log.i(getClass().getName(), "setDelay");
+        Log.d(TAG, "setDelay: " + delay);
 
         ocr.setDelay(delay);
     }

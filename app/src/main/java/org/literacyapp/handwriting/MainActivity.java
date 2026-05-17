@@ -3,60 +3,51 @@ package org.literacyapp.handwriting;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import android.util.Log;
-
-import org.literacyapp.contentprovider.ContentProvider;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int PERMISSION_REQUEST_READ_EXTERNAL_STORAGE = 0;
+    private static final String TAG = "MainActivity";
+
+    private final ActivityResultLauncher<String> readStorageLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                if (granted) {
+                    Intent intent = getBaseContext().getPackageManager()
+                            .getLaunchIntentForPackage(getBaseContext().getPackageName());
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(intent);
+                } else {
+                    finish();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.i(getClass().getName(), "onCreate");
+        Log.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
     }
 
     @Override
     protected void onStart() {
-        Log.i(getClass().getName(), "onStart");
+        Log.d(TAG, "onStart");
         super.onStart();
 
-        // Ask for permissions
-        int permissionCheckWriteExternalStorage = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
-        if (permissionCheckWriteExternalStorage != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_READ_EXTERNAL_STORAGE);
-            return;
-        }
-
-        ContentProvider.initializeDb(this);
-
-        Intent intent = new Intent(this, WriteLetterActivity.class);
-        startActivity(intent);
-
-        finish();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if ((requestCode == PERMISSION_REQUEST_READ_EXTERNAL_STORAGE)) {
-            if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                // Permission granted. Restart application
-                Intent intent = getBaseContext().getPackageManager().getLaunchIntentForPackage(getBaseContext().getPackageName());
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
-            } else {
-                // Permission denied. Close application
-                finish();
+        // READ_EXTERNAL_STORAGE has no effect on API 33+
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                readStorageLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE);
+                return;
             }
         }
+
+        startActivity(new Intent(this, WriteLetterActivity.class));
+        finish();
     }
 }
