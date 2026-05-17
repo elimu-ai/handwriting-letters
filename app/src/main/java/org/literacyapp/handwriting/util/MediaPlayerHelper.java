@@ -3,25 +3,13 @@ package org.literacyapp.handwriting.util;
 import android.content.Context;
 import android.content.res.Resources;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.util.Log;
 
-import org.literacyapp.contentprovider.dao.AudioDao;
-import org.literacyapp.contentprovider.model.content.Letter;
-import org.literacyapp.contentprovider.model.content.multimedia.Audio;
-import org.literacyapp.contentprovider.util.MultimediaHelper;
+import ai.elimu.model.v2.gson.content.LetterGson;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Utility class which helps releasing the {@link MediaPlayer} instance after
- * finishing playing the audio.
- * <p />
- *
- * See https://developer.android.com/reference/android/media/MediaPlayer.html#create%28android.content.Context,%20int%29
- */
 public class MediaPlayerHelper {
     private static final String INSTRUCTION_LETTER_1 = "can_you_draw_the_letter";
     private static final String INSTRUCTION_LETTER_2 = "draw_the_letter";
@@ -46,16 +34,10 @@ public class MediaPlayerHelper {
             }
         });
         mediaPlayer.start();
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mediaPlayer) {
-                mediaPlayer.release();
-            }
-        });
         return mediaPlayer;
     }
 
-    public static MediaPlayer playInstructionSound(Context context){
+    public static MediaPlayer playInstructionSound(Context context) {
         Log.i(context.getClass().getName(), "playInstructionSound");
 
         List<String> instructionList = new ArrayList<>();
@@ -67,40 +49,15 @@ public class MediaPlayerHelper {
         return playRandomResource(context, instructionList);
     }
 
-    public static void playLetterSound(Context context, AudioDao audioDao, Letter letter) {
+    public static void playLetterSound(Context context, LetterGson letter) {
         Log.i(context.getClass().getName(), "playLetterSound");
 
-        // Look up corresponding Audio
-        Log.d(context.getClass().getName(), "Looking up \"letter_sound_" + letter.getText() + "\"");
-        final Audio audio = audioDao.queryBuilder()
-                .where(AudioDao.Properties.Transcription.eq("letter_sound_" + letter.getText()))
-                .unique();
-        Log.i(context.getClass().getName(), "audio: " + audio);
-        if (audio != null) {
-            // Play audio
-            File audioFile = MultimediaHelper.getFile(audio);
-            if (audioFile.exists()){
-                Uri uri = Uri.parse(audioFile.getAbsolutePath());
-                MediaPlayer mediaPlayer = MediaPlayer.create(context, uri);
-                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                    @Override
-                    public void onCompletion(MediaPlayer mediaPlayer) {
-                        Log.i(getClass().getName(), "onCompletion");
-                        mediaPlayer.release();
-                    }
-                });
-                mediaPlayer.start();
-            } else {
-                // Audio not found. Fall-back to application resource.
-                playLetterSoundFromAppResources(context, letter);
-            }
-        } else {
-            // Audio not found. Fall-back to application resource.
+        if (letter != null) {
             playLetterSoundFromAppResources(context, letter);
         }
     }
 
-    private static void playLetterSoundFromAppResources(Context context, Letter letter){
+    private static void playLetterSoundFromAppResources(Context context, LetterGson letter) {
         Log.i(context.getClass().getName(), "playLetterSoundFromAppResources");
 
         String audioFileName = "letter_sound_" + letter.getText();
@@ -114,7 +71,7 @@ public class MediaPlayerHelper {
         }
     }
 
-    public static MediaPlayer playLessonCompleted(Context context){
+    public static MediaPlayer playLessonCompleted(Context context) {
         Log.i(context.getClass().getName(), "playLessonCompleted");
 
         List<String> lessonCompletedList = new ArrayList<>();
@@ -128,9 +85,9 @@ public class MediaPlayerHelper {
         return playRandomResource(context, lessonCompletedList);
     }
 
-    private static MediaPlayer playRandomResource(Context context, List<String> list){
+    private static MediaPlayer playRandomResource(Context context, List<String> list) {
         Resources resources = context.getResources();
-        int resourceId = resources.getIdentifier(list.get((int)(Math.random() * list.size())), "raw", context.getPackageName());
+        int resourceId = resources.getIdentifier(list.get((int) (Math.random() * list.size())), "raw", context.getPackageName());
         MediaPlayer mediaPlayer = null;
         try {
             if (resourceId != 0) {
