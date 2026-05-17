@@ -42,14 +42,9 @@ repositories {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    androidTestImplementation(libs.androidx.test.espresso.core) {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    }
-
     implementation libs.elimu.content.provider
     implementation libs.androidx.appcompat
     implementation libs.androidx.cardview
-    implementation libs.androidx.legacy.support.v4
     implementation libs.encog.core
     androidTestImplementation libs.androidx.test.ext.junit
     androidTestImplementation libs.androidx.test.runner
